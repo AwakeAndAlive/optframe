@@ -1,26 +1,24 @@
 #!/bin/bash
 
-echo "This script requires 'sudo' to install OptFrame"
+echo "Installing OptFrame (with OptFCore) into /home/augusto01/.local/include and /home/augusto01/.local/optframe"
 
-if [[ ! $(sudo echo 0) ]]; then exit; fi
+if [[ ! $(echo 0) ]]; then exit; fi
 
-echo "Installing OptFrame (with OptFCore) into /usr/local/include and /usr/local/optframe"
-
-read -r -p "Continue? y/n" input
+read -r -p "Continue? y/n " input
 
 case $input in
     [yY][eE][sS]|[yY])
     echo "Yes"
 
-    cp -r src/OptFrame /usr/local/include/
-    cp -r src/OptFCore /usr/local/include/
+    cp -r include/OptFrame /home/augusto01/.local/include/
+    cp -r include/OptFCore /home/augusto01/.local/include/
 
-    mkdir -p /usr/local/optframe
+    mkdir -p /home/augusto01/.local/optframe
 
-    cp -r Examples /usr/local/optframe/
-    cp -r src      /usr/local/optframe/
-    cp -r tests    /usr/local/optframe/
-    cp    makefile /usr/local/optframe/
+    cp -r Examples /home/augusto01/.local/optframe/
+    cp -r src      /home/augusto01/.local/optframe/
+    cp -r tests    /home/augusto01/.local/optframe/
+    cp    makefile /home/augusto01/.local/optframe/
     echo "Finished installation!"
  ;;
     [nN][oO]|[nN])
@@ -34,6 +32,3 @@ case $input in
  exit 1
  ;;
 esac
-
-
-
