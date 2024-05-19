@@ -1,9 +1,4 @@
-NAME: TRP-S1000-R1
-TYPE: TSP
-COMMENT: Traveling Repairman Problem (TRP) Instances based on uniform distribution. Designed by Amir Salehipour, University of Antwerp, 2006.
-DIMENSION: 1001
-EDGE_WEIGHT_TYPE: EUC_2D
-NODE_COORD_SECTION
+1001
 1 404 16
 2 430 192
 3 372 256
@@ -1005,4 +1000,3 @@ NODE_COORD_SECTION
 999 252 10
 1000 166 340
 1001 332 225
-EOF
