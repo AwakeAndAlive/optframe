@@ -18,7 +18,7 @@ main()
 
    // load data into problem context 'pTSP'
    //Scanner scanner{ "3\n1 10 10\n2 20 20\n3 30 30\n" };
-   Scanner scanner{ "5\n0 100 100\n1 100 200\n2 2000 2000\n3 2000 100\n4 150 150" };
+   Scanner scanner{ "6\n1 100 100\n2 100 200\n3 2000 2000\n4 2000 100\n5 150 150\n6 50 50"};
    pTSP.load(scanner);
    std::cout << pTSP.dist << std::endl;
 
