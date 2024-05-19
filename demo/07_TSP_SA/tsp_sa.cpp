@@ -125,9 +125,9 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    double initialTemp = 99999.0;
-    double finalTemp = 0.0001;
-    int maxIterations = 10000;
+    double initialTemp = 100000.0;
+    double finalTemp = 0.1;
+    int maxIterations = 20000;
     double coolingRate = 0.98;
 
     auto start = chrono::high_resolution_clock::now();
