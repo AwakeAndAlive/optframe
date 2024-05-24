@@ -1,4 +1,4 @@
-// SPDX-License-Identifier:  MIT OR LGPL-3.0-or-later
+// SPDX-License-Identifier: MIT OR LGPL-3.0-or-later
 // Copyright (C) 2007-2022 - OptFrame developers
 // https://github.com/optframe/optframe
 
@@ -6,7 +6,10 @@
 
 // C++
 #include <iostream>
-//
+#include <fstream>
+#include <vector>
+#include <algorithm>
+#include <ctime>
 #include "TSP-fcore.hpp"
 // implementation of TSP
 //
@@ -15,6 +18,7 @@
 #include <OptFrame/Heuristics/Heuristics.hpp>  // many metaheuristics here...
 #include <OptFrame/InitialPopulation.hpp>
 #include <OptFrame/LocalSearch.hpp>
+#include <OptFrame/Timer.hpp>
 
 // import everything on main()
 using namespace std;        // NOLINT
@@ -22,119 +26,127 @@ using namespace optframe;   // NOLINT
 using namespace scannerpp;  // NOLINT
 // using namespace TSP_fcore;
 
-class MyRandomKeysInitEPop
-    : public InitialEPopulation<
-          std::pair<std::vector<double>, Evaluation<int>>> {
-  using RSK = std::vector<double>;
+class MyRandomKeysInitEPop : public InitialEPopulation<std::pair<std::vector<double>, Evaluation<int>>>
+{
+    using RSK = std::vector<double>;
 
- private:
-  int sz;
-  sref<RandGen> rg;
+private:
+    int sz;
+    sref<RandGen> rg;
 
- public:
-  explicit MyRandomKeysInitEPop(int size, sref<RandGen> _rg = new RandGen)
-      : sz{size}, rg{_rg} {}
+public:
+    explicit MyRandomKeysInitEPop(int size, sref<RandGen> _rg = new RandGen)
+        : sz{size}, rg{_rg} {}
 
-  // copy constructor
-  // MyRandomKeysInitEPop(const MyRandomKeysInitEPop& self)
-  //     : sz{self.sz}, rg{self.rg} {}
+    bool canEvaluate() const override { return false; }
 
-  // this generator cannot evaluate solutions
-  bool canEvaluate() const override { return false; }
+    VEPopulation<std::pair<RSK, Evaluation<int>>> generateEPopulation(unsigned populationSize, double timelimit) override
+    {
+        VEPopulation<std::pair<RSK, Evaluation<int>>> pop;
 
-  VEPopulation<std::pair<RSK, Evaluation<int>>> generateEPopulation(
-      unsigned populationSize, double timelimit) override {
-    VEPopulation<std::pair<RSK, Evaluation<int>>> pop;
+        for (unsigned i = 0; i < populationSize; i++)
+        {
+            vector<double> vd(sz);
+            for (int j = 0; j < sz; j++) vd[j] = (rg->rand() % 100000) / 100000.0;
+            std::pair<RSK, Evaluation<int>> ind{vd, Evaluation<int>{}};
+            pop.push_back(ind);
+        }
 
-    for (unsigned i = 0; i < populationSize; i++) {
-      vector<double> vd(sz);
-      for (int j = 0; j < sz; j++) vd[j] = (rg->rand() % 100000) / 100000.0;
-      // assert(!this->canEvaluate());
-      std::pair<RSK, Evaluation<int>> ind{vd, Evaluation<int>{}};
-      pop.push_back(ind);
+        return pop;
     }
-
-    return pop;
-  }
 };
 
+pair<Evaluation<int>, vector<int>> fDecodeEval(sref<Evaluator<typename ESolutionTSP::first_type, typename ESolutionTSP::second_type, ESolutionTSP>> eval, const vector<double>& rk)
+{
+    vector<pair<double, int>> v(rk.size());
+    for (unsigned i = 0; i < v.size(); i++) v[i] = pair<double, int>(rk[i], i);
 
-pair<Evaluation<int>, vector<int>> fDecodeEval(
-    sref<Evaluator<typename ESolutionTSP::first_type,
-                   typename ESolutionTSP::second_type, ESolutionTSP>>
-        eval,
-    const vector<double>& rk) {
-  vector<pair<double, int>> v(rk.size());
-  //
-  for (unsigned i = 0; i < v.size(); i++) v[i] = pair<double, int>(rk[i], i);
+    sort(v.begin(), v.end(), [](const pair<double, int>& i, const pair<double, int>& j) -> bool {
+        return i.first < j.first;
+    });
 
-  sort(v.begin(), v.end(),
-       [](const pair<double, int>& i, const pair<double, int>& j) -> bool {
-         return i.first < j.first;
-       });
+    vector<int> p(v.size());
+    for (unsigned i = 0; i < v.size(); i++) p[i] = v[i].second;
 
-  // R = vector<int>
-  vector<int> p(v.size());
-  for (unsigned i = 0; i < v.size(); i++) p[i] = v[i].second;
-
-  /*
-  // ========== CHECKER ========
-  vector<bool> vb(v.size(), false);
-  for (unsigned i = 0; i < p.size(); i++)
-     vb[p[i]] = true;
-  for (unsigned i = 0; i < vb.size(); i++) {
-     if (!vb[i]) {
-        std::cout << "ERROR rk:" << rk << std::endl;
-        std::cout << "ERROR v:" << v << std::endl;
-        std::cout << "ERROR p:" << p << std::endl;
-        std::cout << "ERROR vb:" << vb << std::endl;
-     }
-     assert(vb[i]);
-  }
-  // ===== end CHECKER =====
-*/
-
-  Evaluation<int> e = eval->evaluate(p);
-  return make_pair(e, p);
+    Evaluation<int> e = eval->evaluate(p);
+    return make_pair(e, p);
 }
 
-// evaluator random keys (for TSP)
-// FDecoderEvalRK<std::pair<std::vector<int>, Evaluation<int>>, double>
-// decoder{fDecode};
-int main() {
-  sref<RandGen> rg = new RandGen;  // avoids weird windows OS interactions
+int main()
+{
+    sref<RandGen> rg = new RandGen;  // avoids weird windows OS interactions
 
-  // load data into problem context 'pTSP'
-  Scanner scanner{"5\n1 10 10\n2 20 20\n3 30 30\n4 40 40\n5 50 50\n"};
-  sref<ProblemContext> pTSP{new ProblemContext{}};
-  pTSP->load(scanner);
-  std::cout << pTSP->dist << std::endl;
+    // Start timer
+    Timer t;
 
-  OptFrameDemoTSP demo{pTSP};
-  // setup decoder function
-  demo.decoder = sptr<DecoderRandomKeys<ESolutionTSP, double>>{
-      new FDecoderEvalRK<std::pair<std::vector<int>, Evaluation<int>>, double>{
-          demo.eval, fDecodeEval}};
+    // Load data into problem context 'pTSP'
+    ifstream file("instances/08_TRP-S1000-R1.tsp");
+    if (!file) {
+        cerr << "Error: could not open file instances/01_berlin52.tsp" << endl;
+        return 1;
+    }
+    Scanner scanner(&file);
+    sref<ProblemContext> pTSP{new ProblemContext{}};
+    pTSP->load(scanner);
+    std::cout << pTSP->dist << std::endl;
 
-  // Parameters BRKGA
-  // (C1): Evaluator<S, XEv>& _evaluator, int key_size, unsigned numGen,
-  // unsigned _popSize, double fracTOP, double fracBOT, double _probElitism) :
+    OptFrameDemoTSP demo{pTSP};
+    // Setup decoder function
+    demo.decoder = sptr<DecoderRandomKeys<ESolutionTSP, double>>{
+        new FDecoderEvalRK<std::pair<std::vector<int>, Evaluation<int>>, double>{
+            demo.eval, fDecodeEval}};
 
-  sref<DecoderRandomKeys<ESolutionTSP, double>> _decoder = demo.decoder;
-  sref<InitialEPopulation<std::pair<vector<double>, ESolutionTSP::second_type>>>
-      _initPop = new MyRandomKeysInitEPop(pTSP->n);  // passing key_size
+    // Parameters BRKGA
+    unsigned population_size = 30;
+    unsigned num_generations = 2000;
+    double elite_proportion = 0.4;
+    double mutant_proportion = 0.3;
+    double elite_inheritance_probability = 0.6;
 
-  // eprk, pTSP.n, 1000, 30, 0.4, 0.3, 0.6
-  BRKGA<ESolutionTSP, double> brkga(
-      _decoder, MyRandomKeysInitEPop(pTSP->n, rg),  // key_size = pTSP.n
-      30, 1000, 0.4, 0.3, 0.6, rg);
+    sref<DecoderRandomKeys<ESolutionTSP, double>> _decoder = demo.decoder;
+    sref<InitialEPopulation<std::pair<vector<double>, ESolutionTSP::second_type>>> _initPop = new MyRandomKeysInitEPop(pTSP->n);  // passing key_size
 
-  auto searchOut = brkga.search(3.0);  // 3.0 seconds max
-  ESolutionTSP best = *searchOut.best;
-  // best solution value
-  best.second.print();
-  std::cout << "solution: " << best.first << std::endl;
+    BRKGA<ESolutionTSP, double> brkga(
+        _decoder, MyRandomKeysInitEPop(pTSP->n, rg),  // key_size = pTSP.n
+        population_size, num_generations, elite_proportion, mutant_proportion, elite_inheritance_probability, rg);
 
-  std::cout << "FINISHED" << std::endl;
-  return 0;
+    // Store initial solution and evaluation
+    auto initial_sol = demo.randomConstructive->generateSolution(0);
+    ESolutionTSP esol(*initial_sol, demo.eval->evaluate(*initial_sol));
+    auto initial_eval = esol.second.evaluation();
+
+    auto searchOut = brkga.search(3000.0);  // 3.0 seconds max
+    ESolutionTSP best = *searchOut.best;
+
+    // Calculate improvement
+    double improvement = 100.0 * (initial_eval - best.second.evaluation()) / initial_eval;
+
+    // Print results
+    std::cout << "Instance: 08_TRP-S1000-R1.tsp" << std::endl;
+    std::cout << "BRKGA parameters: population size = " << population_size
+              << ", num generations = " << num_generations
+              << ", elite proportion = " << elite_proportion
+              << ", mutant proportion = " << mutant_proportion
+              << ", elite inheritance probability = " << elite_inheritance_probability << std::endl;
+    std::cout << "Initial evaluation: " << initial_eval << std::endl;
+    std::cout << "Initial solution: [";
+    for (size_t i = 0; i < initial_sol->size(); i++) {
+        std::cout << (*initial_sol)[i];
+        if (i < initial_sol->size() - 1) std::cout << ", ";
+    }
+    std::cout << "]" << std::endl;
+    std::cout << "Best solution found by BRKGA: Evaluation function value = " << best.second.evaluation() << std::endl;
+    std::cout << "Best solution: [";
+    for (size_t i = 0; i < best.first.size(); i++) {
+        std::cout << best.first[i];
+        if (i < best.first.size() - 1) std::cout << ", ";
+    }
+    std::cout << "]" << std::endl;
+    std::cout << "Improvement: " << improvement << " %" << std::endl;
+
+    // Print execution time
+    std::cout << "Execution Time: " << t.inSecs() << " seconds" << std::endl;
+
+    std::cout << "FINISHED" << std::endl;
+    return 0;
 }
