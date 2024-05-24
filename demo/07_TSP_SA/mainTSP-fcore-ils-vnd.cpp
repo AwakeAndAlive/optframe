@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT OR LGPL-3.0-or-later
-// Copyright (C) 2007-2022 - OptFrame developers
+// Copyright (C) 2007-2024 - OptFrame developers
 // https://github.com/optframe/optframe
 
 // OptFrame Demo TSP - Iterated Local Search
