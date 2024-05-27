@@ -18,8 +18,6 @@ instances=(
     "07_rat784.tsp"
     "08_TRP-S1000-R1.tsp"
 )
-
-# Nome do arquivo CSV de saída
 output_csv="output.csv"
 
 # Limpa o arquivo CSV de saída
@@ -28,13 +26,9 @@ output_csv="output.csv"
 # Executa 30 vezes cada instância
 for instance in "${instances[@]}"; do
     for i in {1..30}; do
-        # Executa o programa e captura a saída
         output=$(./mainRun "instances/$instance" $population_size $num_generations $elite_proportion $mutant_proportion $elite_inheritance_probability)
-
-        # Ignora a primeira linha e salva a segunda linha no arquivo CSV
+        # Ignora a primeira linha de saída da biblioteca "RKGA: best fitness at initial population"
         echo "$output" | sed -n '2p' >> $output_csv
-
-        # Opcional: Exibe a saída no terminal para acompanhar a execução
         echo "$output" | sed -n '2p'
     done
 done
