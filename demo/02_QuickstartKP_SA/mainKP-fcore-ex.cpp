@@ -50,15 +50,20 @@ std::cout << "======== Executa Simulated Annealing ========" << std::endl;
 RandGen rg;
 //
 // Cria objeto da classe 'InitialSearch' (parecido com 'construtivoAleatório')
-BasicInitialSearch<ESolutionKP> initRand(demo.randomConstructive, demo.evalKP);
+BasicInitialSearch<ESolutionKP> initRand(nnptr::copy(demo.randomConstructive),
+                                         nnptr::copy(demo.evalKP));
 // Instancia um Simulated Annealing com alpha=98%, iterações na temp = 100,
 // temperatura inicial = 99999
-BasicSimulatedAnnealing<ESolutionKP> sa{
-    demo.evalKP, initRand, demo.nsFlip, 0.98, 100, 99999, rg};
+BasicSimulatedAnnealing<ESolutionKP> sa(nnptr::copy(demo.evalKP),
+                                        nnptr::copy(initRand),
+                                        nnptr::copy(demo.nsFlip), 0.98, 100,
+                                        99999, nnptr::copy(rg));
 // executa o SA e coleta o 'status' de saída
 // passa um 'Criterio de Parada' por tempo (= 10 segundos)
+optframe::Timer t;
 auto searchOut = sa.search(
     StopCriteria<ESolutionKP::second_type>{10.0});  // 10.0 seconds max
+std::cout << "spent time: " << t.now() << "s" << std::endl;
 // pega melhor solução do método SA
 ESolutionKP melhor = *searchOut.best;  //*sa.getBestSolution();
 std::cout << "======== Imprime melhor solução do SA ========" << std::endl;

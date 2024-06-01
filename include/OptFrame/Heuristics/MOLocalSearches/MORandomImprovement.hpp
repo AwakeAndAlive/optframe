@@ -32,16 +32,15 @@
 namespace optframe {
 
 // Basic MORI does not considering valid move, parameter iterMax only.
-template <XESolution XMES, XEvaluation XMEv = MultiEvaluation<>>
-class MORandomImprovement : public MOLocalSearch<XMES, XMEv> {
+template <XESolution XES, XEMSolution XMES>
+class MORandomImprovement : public MOLocalSearch<XES, XMES> {
   using S = typename XMES::first_type;
-  static_assert(is_same<S, typename XMES::first_type>::value);
-  static_assert(is_same<XMEv, typename XMES::second_type>::value);
+  using XMEv = typename XMES::second_type;
 
  private:
   // MultiEvaluator<S, XEv>& mev;
-  sref<GeneralEvaluator<XMES, XMEv>> mev;
-  sref<NS<XMES, XMEv>> ns;
+  sref<GeneralEvaluator<XMES>> mev;
+  sref<NS<XMES>> ns;
 
   // logs
   double sum_time;
@@ -51,8 +50,8 @@ class MORandomImprovement : public MOLocalSearch<XMES, XMEv> {
  public:
   // MORandomImprovement(MultiEvaluator<S, XEv>& _mev, NS<XES, XSH>& _ns,
   // unsigned int _iterMax) :
-  MORandomImprovement(sref<GeneralEvaluator<XMES, XMEv>> _mev,
-                      sref<NS<XMES, XMEv>> _ns, unsigned int _iterMax)
+  MORandomImprovement(sref<GeneralEvaluator<XMES>> _mev, sref<NS<XMES>> _ns,
+                      unsigned int _iterMax)
       : mev(_mev), ns(_ns), iterMax(_iterMax) {
     sum_time = 0.0;
     num_calls = 0;
@@ -71,7 +70,7 @@ class MORandomImprovement : public MOLocalSearch<XMES, XMEv> {
 */
 
   virtual void moSearchFrom(Pareto<XMES>& p, XMES& se,
-                            paretoManager<S, XMEv, XMES>& pManager,
+                            ParetoManager<XES, XMES>& pManager,
                             const StopCriteria<XMEv>& stopCriteria) override {
     num_calls++;
     Timer t;
@@ -81,10 +80,10 @@ class MORandomImprovement : public MOLocalSearch<XMES, XMEv> {
     int iter = 0;
 
     while ((iter < iterMax) && ((t.now() - stopCriteria.timelimit) < 0)) {
-      uptr<Move<XMES, XMEv>> move = ns->randomMove(se);
+      uptr<Move<XMES>> move = ns->randomMove(se);
       if (move->canBeApplied(se)) {
         // Move and mark sMev as outdated
-        uptr<Move<XMES, XMEv>> mov_rev = move->apply(se);
+        uptr<Move<XMES>> mov_rev = move->apply(se);
 
         // Call method to reevaluate sMev and try to include TODO
         //				pManager->addSolutionWithMEVReevaluation(p,
@@ -113,12 +112,12 @@ class MORandomImprovement : public MOLocalSearch<XMES, XMEv> {
     sum_time += t.inMilliSecs();
   }
   bool compatible(std::string s) override {
-    return (s == idComponent()) || (MOLocalSearch<XMES, XMEv>::compatible(s));
+    return (s == idComponent()) || (MOLocalSearch<XES, XMES>::compatible(s));
   }
 
   static string idComponent() {
     stringstream ss;
-    ss << MOLocalSearch<XMES, XMEv>::idComponent() << "MO-RI";
+    ss << MOLocalSearch<XES, XMES>::idComponent() << "MO-RI";
     return ss.str();
   }
 

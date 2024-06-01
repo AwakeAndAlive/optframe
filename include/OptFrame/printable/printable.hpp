@@ -4,7 +4,6 @@
 #ifndef OPTFRAME_PRINTABLE_HPP_
 #define OPTFRAME_PRINTABLE_HPP_
 
-#include <OptFrame/SemStream.hpp>
 #include <iostream>
 #include <map>
 #include <optional>  // requires c++17
@@ -13,11 +12,11 @@
 #include <string>
 #include <utility>
 #include <vector>
+//
+#include <OptFrame/SemStream.hpp>
 
 // TODO(igormcoelho): std::ostreamable
-//#include "../myconcepts.h" // std::ostreamable concept!
-
-// using namespace std;
+// #include "../myconcepts.h" // std::ostreamable concept!
 
 namespace optframe {
 

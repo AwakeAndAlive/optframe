@@ -1,12 +1,14 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later OR MIT
 // Copyright (C) 2007-2022 - OptFrame - https://github.com/optframe/optframe
 
-#ifndef OPTFRAME_MULTI_EVALUATOR_HPP_
-#define OPTFRAME_MULTI_EVALUATOR_HPP_
+#ifndef OPTFRAME_MULTIEVALUATOR_HPP_
+#define OPTFRAME_MULTIEVALUATOR_HPP_
 
 // C++
 #include <iostream>
+#include <string>
 #include <utility>
+#include <vector>
 //
 #include <OptFrame/Concepts/MyConcepts.hpp>
 #include <OptFrame/Evaluator.hpp>
@@ -15,8 +17,8 @@
 #include <OptFrame/Hyper/ComponentBuilder.hpp>
 #include <OptFrame/Hyper/ComponentMultiBuilder.hpp>
 #include <OptFrame/IEvaluator.hpp>
-#include <OptFrame/MultiDirection.hpp>
-#include <OptFrame/MultiEvaluator.hpp>
+// #include <OptFrame/MultiDirection.hpp>
+// #include <OptFrame/MultiEvaluator.hpp>
 
 namespace optframe {
 
@@ -192,6 +194,7 @@ class MultiEvaluatorBuilder : public ComponentBuilder<XES> {
       evlist.push_back(x);
     }
 
+    // NOLINTNEXTLINE
     return new MultiEvaluator<XES, XMES>(evlist);
   }
 
@@ -251,6 +254,7 @@ class MultiEvaluatorMultiBuilder
       evlist.push_back(x);
     }
 
+    // NOLINTNEXTLINE
     return new MultiEvaluator<XES, XMES>(evlist);
   }
 
@@ -304,10 +308,7 @@ class MultiEvaluatorAction : public Action<XES> {
     return component.compatible(MultiEvaluator<XES, XMES>::idComponent());
   }
 
-  virtual bool handleAction(string action) {
-    return (action == "evaluate");  //|| (action == "betterThan") || (action ==
-                                    //"betterOrEquals");
-  }
+  virtual bool handleAction(string action) { return (action == "evaluate"); }
 
   virtual bool doCast(string component, int id, string type, string variable,
                       HeuristicFactory<XES>& hf, map<string, string>& d) {
@@ -396,4 +397,4 @@ class MultiEvaluatorAction : public Action<XES> {
 
 }  // namespace optframe
 
-#endif /*OPTFRAME_MULTI_EVALUATOR_HPP_*/
+#endif  // OPTFRAME_MULTIEVALUATOR_HPP_

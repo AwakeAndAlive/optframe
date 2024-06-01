@@ -1,53 +1,40 @@
-// OptFrame - Optimization Framework
-
-// Copyright (C) 2009, 2010, 2011
-// http://optframe.sourceforge.net/
-//
-// This file is part of the OptFrame optimization framework. This framework
-// is free software; you can redistribute it and/or modify it under the
-// terms of the GNU Lesser General Public License v3 as published by the
-// Free Software Foundation.
-
-// This framework is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License v3 for more details.
-
-// You should have received a copy of the GNU Lesser General Public License v3
-// along with this library; see the file COPYING.  If not, write to the Free
-// Software Foundation, 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301,
-// USA.
+// SPDX-License-Identifier: LGPL-3.0-or-later OR MIT
+// Copyright (C) 2007-2022 - OptFrame - https://github.com/optframe/optframe
 
 #ifndef OPTFRAME_MOILSLevels_HPP_
 #define OPTFRAME_MOILSLevels_HPP_
 
+// C++
 #include <algorithm>
+#include <string>
+#include <utility>
+//
 
-#include "MOILSLevels.hpp"
-#include "MultiObjILS.hpp"
+#include "./MOILSLPerturbation.hpp"
+#include "./MultiObjILS.hpp"
 
 namespace optframe {
 
 typedef pair<pair<int, int>, pair<int, int>> levelHistory;
 
-template <XESolution XMES, XEvaluation XMEv = MultiEvaluation<>>
+template <XESolution XES, XEMSolution XMES>
 class MOILSLevels
-    : public MultiObjILS<levelHistory, typename XMES::first_type, XMEv> {
+    : public MultiObjILS<levelHistory, typename XMES::first_type> {
   using S = typename XMES::first_type;
-  static_assert(is_same<S, typename XMES::first_type>::value);
-  static_assert(is_same<XMEv, typename XMES::second_type>::value);
-  using XEv = Evaluation<>;  // hardcoded... TODO: fix
+  using XMEv = typename XMES::second_type;
+  using XEv = typename XES::second_type;
+
  private:
   sref<MOILSLPerturbation<XMES, XMEv>> p;
   int iterMax, levelMax;
 
  public:
-  MOILSLevels(sref<IEvaluator<XMES>> _mev,
+  MOILSLevels(sref<MultiEvaluator<XES, XMES>> _mev,
               sref<InitialPareto<XMES>> _init_pareto, int _init_pop_size,
-              sref<MOLocalSearch<XMES, XMEv>> _ls, sref<RandGen> _rg,
+              sref<MOLocalSearch<XES, XMES>> _ls, sref<RandGen> _rg,
               sref<MOILSLPerturbation<XMES, XMEv>> _p, int _iterMax,
               int _levelMax)
-      :  // MOILSLevels(GeneralEvaluator<XMES, XMEv>& _mev, InitialPareto<XES,
+      :  // MOILSLevels(GeneralEvaluator<XMES>& _mev, InitialPareto<XES,
          // XMES>& _init_pareto, int _init_pop_size, MOLocalSearch<S, XMEv>*
          // _ls, RandGen& _rg, MOILSLPerturbation<XMES, XMEv>& _p, int _iterMax,
          // int _levelMax) :
@@ -59,7 +46,7 @@ class MOILSLevels
 
   virtual ~MOILSLevels() {}
 
-  virtual levelHistory& initializeHistory() {
+  levelHistory& initializeHistory() override {
     // cout << "initializeHistory()" << endl;
     pair<int, int> vars(0, 0);
 
@@ -69,8 +56,8 @@ class MOILSLevels
     return *new levelHistory(vars, maxs);
   }
 
-  virtual void perturbation(XMES& smev, const StopCriteria<XMEv>& stopCriteria,
-                            levelHistory& history) override {
+  void perturbation(XMES& smev, const StopCriteria<XMEv>& stopCriteria,
+                    levelHistory& history) override {
     // cout << "perturbation(.)" << endl;
 
     int iter = history.first.first;
@@ -100,8 +87,8 @@ class MOILSLevels
     history.first.second = level;
   }
 
-  virtual void acceptanceCriterion(const Pareto<XMES>& pf,
-                                   levelHistory& history) {
+  void acceptanceCriterion(const Pareto<XMES>& pf,
+                           levelHistory& history) override {
     if (pf.getNewNonDominatedSolutionsStatus()) {
       cout << "New Pareto size: is " << pf.size();
       cout << " on [iter " << history.first.first << " of level "
@@ -116,7 +103,7 @@ class MOILSLevels
     }
   }
 
-  virtual bool terminationCondition(levelHistory& history) {
+  bool terminationCondition(levelHistory& history) override {
     int level = history.first.second;
     int levelMax = history.second.second;
 

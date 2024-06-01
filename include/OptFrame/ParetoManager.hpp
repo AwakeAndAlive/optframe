@@ -1,61 +1,39 @@
-// OptFrame 4.2 - Optimization Framework
-// Copyright (C) 2009-2021 - MIT LICENSE
-// https://github.com/optframe/optframe
-//
-// Permission is hereby granted, free of charge, to any person obtaining
-// a copy of this software and associated documentation files (the "Software"),
-// to deal in the Software without restriction, including without limitation
-// the rights to use, copy, modify, merge, publish, distribute, sublicense,
-// and/or sell copies of the Software, and to permit persons to whom the
-// Software is furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included
-// in all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
-// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
-// THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-// THE SOFTWARE.
+// SPDX-License-Identifier: LGPL-3.0-or-later OR MIT
+// Copyright (C) 2007-2024 - OptFrame - https://github.com/optframe/optframe
 
-#ifndef OPTFRAME_PARETO_MANAGER_HPP
-#define OPTFRAME_PARETO_MANAGER_HPP
+#ifndef OPTFRAME_PARETOMANAGER_HPP_
+#define OPTFRAME_PARETOMANAGER_HPP_
 
 #include <cstring>
 #include <iostream>
+#include <utility>
 #include <vector>
-
-#include "Pareto.hpp"
+//
+#include "./Pareto.hpp"
 
 namespace optframe {
 
-// template <XSolution S, XEvaluation XMEv = MultiEvaluation<>, XESolution XMES
-// = pair<S, XMEv>>
-template <XESolution XMES>
+template <XESolution XES, XEMSolution XMES>
 class ParetoManager {
   using S = typename XMES::first_type;
   using XMEv = typename XMES::second_type;
   using XEv = typename XMEv::XEv;
-  using XES = std::pair<S, XEv>;
-  // using XEv = Evaluation<>;  // hardcoding this... TODO: solve by having a
-  // GeneralEvaluator down here!
+
  public:
-  IEvaluator<XMES>& multiEval;
-  // GeneralEvaluator<XMES, XMEv>& multiEval;
+  sref<MultiEvaluator<XES, XMES>> multiEval;
+  // GeneralEvaluator<XMES>& multiEval;
   // MultiEvaluator<S, XEv>& mev; // cannot be this, for now!
   ParetoDominance<XES, XMES> dom;
   ParetoDominanceWeak<XES, XMES> domWeak;
-  //	Pareto<XMES> x_e;
+  // Pareto<XMES> x_e;
 
  public:
-  explicit ParetoManager(IEvaluator<XMES>& _multiEval)
-      :  // paretoManager(GeneralEvaluator<XMES, XMEv>& _multiEval) : // cannot
+  explicit ParetoManager(sref<MultiEvaluator<XES, XMES>> _multiEval)
+      :  // paretoManager(GeneralEvaluator<XMES>& _multiEval) : // cannot
          // be this, for now!
-        multiEval(_multiEval),
-        dom(ParetoDominance<XES, XMES>(_multiEval)),
-        domWeak(ParetoDominanceWeak<XES, XMES>(_multiEval)) {}
+        multiEval{_multiEval},
+        dom{ParetoDominance<XES, XMES>(_multiEval)},
+        domWeak{ParetoDominanceWeak<XES, XMES>(_multiEval)} {}
 
   virtual ~ParetoManager() {}
 
@@ -88,7 +66,7 @@ class ParetoManager {
   //	}
 
   bool addSolution(Pareto<XMES>& p, const S& candidate) {
-    MultiEvaluation<> mev = multiEval.evaluate(candidate);
+    MultiEvaluation<> mev = multiEval->evaluate(candidate);
     XMES cand_smev = make_pair(candidate, mev);
     // bool added = addSolutionWithMEV(p, candidate, mev);
     bool added = addSolutionWithMEV(p, cand_smev);
@@ -207,4 +185,4 @@ class ParetoManager {
 
 }  // namespace optframe
 
-#endif  // OPTFRAME_PARETO_MANAGER_HPP
+#endif  // OPTFRAME_PARETOMANAGER_HPP_

@@ -33,6 +33,8 @@
 // ========== "not null shared pointer" shortcuts
 template <class R>
 using sref = nnptr::NNShared<R>;
+// NOLINTNEXTLINE
+#define sref_copy(X) nnptr::copy(X)
 //
 template <class R>
 using vsref = std::vector<sref<R>>;
@@ -207,8 +209,10 @@ template <class T>
 concept basic_arithmetics = optframe::basic_arithmetics_assign<T> &&
     requires(const std::remove_reference_t<T>& a,
              const std::remove_reference_t<T>& b) {
-  { a + b } -> my_same_as<T>;
-  { a - b } -> my_same_as<T>;
+  // { a + b } -> my_same_as<T>;
+  { a + b } -> std::convertible_to<T>;
+  // { a - b } -> my_same_as<T>;
+  { a - b } -> std::convertible_to<T>;
 };
 
 template <class T>

@@ -1,27 +1,11 @@
-// OptFrame - Optimization Framework
-
-// Copyright (C) 2009, 2010, 2011
-// http://optframe.sourceforge.net/
-//
-// This file is part of the OptFrame optimization framework. This framework
-// is free software; you can redistribute it and/or modify it under the
-// terms of the GNU Lesser General Public License v3 as published by the
-// Free Software Foundation.
-
-// This framework is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License v3 for more details.
-
-// You should have received a copy of the GNU Lesser General Public License v3
-// along with this library; see the file COPYING.  If not, write to the Free
-// Software Foundation, 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301,
-// USA.
+// SPDX-License-Identifier: LGPL-3.0-or-later OR MIT
+// Copyright (C) 2007-2022 - OptFrame - https://github.com/optframe/optframe
 
 #ifndef OPTFRAME_MULTIOBJECTIVEILS_HPP_
 #define OPTFRAME_MULTIOBJECTIVEILS_HPP_
 
 #include <algorithm>
+//
 
 #include "../../../InitialPareto.hpp"
 #include "../../../MOLocalSearch.hpp"
@@ -36,30 +20,27 @@ namespace optframe {
 template <class H, XSolution S, XEvaluation XMEv = MultiEvaluation<>,
           XESolution XMES = pair<S, XMEv>, XSearch<XMES> XSH = Pareto<XMES>>
 class MultiObjILS : public MOILS, public MultiObjSearch<XMES> {
-  using XEv = Evaluation<>;  // hardcoded... TODO: fix
+  using XEv = typename XMEv::XEv;
+  using XES = std::pair<S, XEv>;  // TODO:  remove
+
  private:
   sref<InitialPareto<XMES>> init_pareto;
   int init_pop_size;
-  sref<MOLocalSearch<XMES, XMEv>> ls;
-  paretoManager<S, XMEv, XMES> pMan;
+  sref<MOLocalSearch<XES, XMES>> ls;
+  ParetoManager<XES, XMES> pMan;
   sref<RandGen> rg;
 
  public:
-  // MultiObjILS(GeneralEvaluator<XMES, XMEv>& _mev, InitialPareto<XMES>&
-  // _init_pareto, int _init_pop_size, MOLocalSearch<S, XMEv>* _ls, RandGen&
-  // _rg)
-  MultiObjILS(sref<IEvaluator<XMES>> _mev,
+  MultiObjILS(sref<MultiEvaluator<XES, XMES>> _mev,
               sref<InitialPareto<XMES>> _init_pareto, int _init_pop_size,
-              sref<MOLocalSearch<XMES, XMEv>> _ls, sref<RandGen> _rg)
-      // MultiObjILS(Evaluator<S>& _mev, InitialPareto<XMES>& _init_pareto,
-      // int _init_pop_size, MOLocalSearch<S, XEv>* _ls, RandGen& _rg)
+              sref<MOLocalSearch<XES, XMES>> _ls, sref<RandGen> _rg)
       : init_pareto(_init_pareto),
         init_pop_size(_init_pop_size),
         ls(_ls),
-        pMan(paretoManager<S, XMEv, XMES>(_mev)),
+        pMan(ParetoManager<XES, XMES>(_mev)),
         rg(_rg) {}
 
-  virtual ~MultiObjILS() {}
+  ~MultiObjILS() override {}
 
   virtual H& initializeHistory() = 0;
 
@@ -70,12 +51,11 @@ class MultiObjILS : public MOILS, public MultiObjSearch<XMES> {
 
   virtual bool terminationCondition(H& history) = 0;
 
-  // virtual Pareto<XMES>* search(StopCriteria<XEv>& stopCriteria, Pareto<XMES>*
-  // _pf = nullptr) override
-  virtual SearchOutput<XMES, Pareto<XMES>> search(
-      const StopCriteria<XMEv>& stopCriteria) override {
+  SearchOutput<XMES, Pareto<XMES>> searchBy(
+      const StopCriteria<XMEv>& stopCriteria,
+      std::optional<Pareto<XMES>> _best) override {
     // std::optional<Pareto<XMES>>& p = this->best;
-    //  TODO: reimplement with SearchBy...
+    // TODO: reimplement with SearchBy...
     std::optional<Pareto<XMES>> p;
     //
     Timer tnow;

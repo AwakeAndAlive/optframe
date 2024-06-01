@@ -27,11 +27,18 @@ namespace optframe {
 // OptFrame Functional Core (FCore)
 class FCore {
  public:
-  static constexpr char OPTFRAME_VERSION[] = "5.0.18";
+  static constexpr char OPTFRAME_VERSION[] = "5.1.0";
   static std::string version() { return OPTFRAME_VERSION; }
 
   static std::string welcome() {
-    return "Welcome to OptFrame Functional Core (FCore) - version " + version();
+    std::string s =
+        "Welcome to OptFrame Functional Core (FCore) - version " + version();
+#if defined(__cpp_concepts) && (__cpp_concepts >= 201907L)
+    s.append(" (built with c++20 concepts)");
+#else
+    s.append(" (built without c++20 concepts)");
+#endif
+    return s;
   }
 };
 

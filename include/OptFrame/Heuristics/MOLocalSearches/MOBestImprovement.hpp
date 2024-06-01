@@ -31,11 +31,13 @@
 
 namespace optframe {
 
-template <XSolution S, XEvaluation XMEv = Evaluation<>, XESolution XMES = pair<S, XMEv>>
-class MOBestImprovement : public MOLocalSearch<S, XMEv> {
+template <XESolution XES, XESolution XMES>
+class MOBestImprovement : public MOLocalSearch<XES, XMES> {
  private:
-  //MultiEvaluator<S, XEv>& v_e;
-  GeneralEvaluator<XMES, XMEv>& v_e;
+  using S = typename XES::first_type;
+  using XMEv = typename XMES::second_type;
+  // MultiEvaluator<S, XEv>& v_e;
+  GeneralEvaluator<XMES>& v_e;
   NSSeq<S>& nsSeq;
 
   // logs
@@ -43,17 +45,17 @@ class MOBestImprovement : public MOLocalSearch<S, XMEv> {
   int num_calls;
 
  public:
-  //MOBestImprovement(MultiEvaluator<S, XEv>& _v_e, NSSeq<S>& _nsSeq) :
-  MOBestImprovement(GeneralEvaluator<XMES, XMEv>& _v_e, NSSeq<S>& _nsSeq)
+  // MOBestImprovement(MultiEvaluator<S, XEv>& _v_e, NSSeq<S>& _nsSeq) :
+  MOBestImprovement(GeneralEvaluator<XMES>& _v_e, NSSeq<S>& _nsSeq)
       : v_e(_v_e), nsSeq(_nsSeq) {
     sum_time = 0.0;
     num_calls = 0;
   }
 
-  virtual ~MOBestImprovement() {
-  }
+  virtual ~MOBestImprovement() {}
 
-  virtual void exec(IESolution<S, XMEv>& s, paretoManager<S, XMEv, XMES>& pManager, double timelimit, double target_f) {
+  virtual void exec(IESolution<S, XMEv>& s, ParetoManager<XES, XMES>& pManager,
+                    double timelimit, double target_f) {
     MultiEvaluation<>& sMev = v_e.evaluate(s);
 
     exec(s, sMev, pManager, timelimit, target_f);
@@ -62,7 +64,9 @@ class MOBestImprovement : public MOLocalSearch<S, XMEv> {
     delete &sMev;
   }
 
-  virtual void exec(IESolution<S, XMEv>& s, XMEv& sMev, paretoManager<S, XMEv, XMES>& pManager, double timelimit, double target_f) {
+  virtual void exec(IESolution<S, XMEv>& s, XMEv& sMev,
+                    ParetoManager<XES, XMES>& pManager, double timelimit,
+                    double target_f) {
     num_calls++;
     Timer t;
 
@@ -77,11 +81,11 @@ class MOBestImprovement : public MOLocalSearch<S, XMEv> {
     }
 
     while (!it.isDone()) {
-      Move<XMES, XMEv>* move = &it.current();
+      Move<XMES>* move = &it.current();
       if (move->canBeApplied(s)) {
         //				cout << "before anything" << endl;
         //				sMev.print();
-        Move<XMES, XMEv>* mov_rev = move->apply(sMev, s);
+        Move<XMES>* mov_rev = move->apply(sMev, s);
         v_e.evaluate(sMev, s);
 
         //				cout << "after move" << endl;
@@ -116,17 +120,13 @@ class MOBestImprovement : public MOLocalSearch<S, XMEv> {
 
   static string idComponent() {
     stringstream ss;
-    ss << MOLocalSearch<XMES, XMEv>::idComponent() << ":MO-BI";
+    ss << MOLocalSearch<XES, XMES>::idComponent() << ":MO-BI";
     return ss.str();
   }
 
-  virtual string id() const override {
-    return idComponent();
-  }
+  virtual string id() const override { return idComponent(); }
 
-  void print() const override {
-    cout << toString() << endl;
-  }
+  void print() const override { cout << toString() << endl; }
 
   std::string toString() const override {
     stringstream ss;

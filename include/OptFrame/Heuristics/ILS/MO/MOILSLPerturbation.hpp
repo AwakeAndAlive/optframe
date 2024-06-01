@@ -1,24 +1,5 @@
-// OptFrame 4.2 - Optimization Framework
-// Copyright (C) 2009-2021 - MIT LICENSE
-// https://github.com/optframe/optframe
-//
-// Permission is hereby granted, free of charge, to any person obtaining
-// a copy of this software and associated documentation files (the "Software"),
-// to deal in the Software without restriction, including without limitation
-// the rights to use, copy, modify, merge, publish, distribute, sublicense,
-// and/or sell copies of the Software, and to permit persons to whom the
-// Software is furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included
-// in all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
-// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
-// THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-// THE SOFTWARE.
+// SPDX-License-Identifier: LGPL-3.0-or-later OR MIT
+// Copyright (C) 2007-2022 - OptFrame - https://github.com/optframe/optframe
 
 #ifndef OPTFRAME_MOILSLPerturbation_HPP_
 #define OPTFRAME_MOILSLPerturbation_HPP_
@@ -63,20 +44,20 @@ class MOILSLPerturbation : public Component, public MOILS {
 template <XESolution XMES, XEvaluation XMEv = MultiEvaluation<>>
 class MOILSLPerturbationLPlus2 : public MOILSLPerturbation<XMES, XMEv> {
  private:
-  vsref<NS<XMES, XMEv>> ns;
-  sref<GeneralEvaluator<XMES, XMEv>> evaluator;
+  vsref<NS<XMES>> ns;
+  sref<GeneralEvaluator<XMES>> evaluator;
   sref<RandGen> rg;
 
  public:
-  MOILSLPerturbationLPlus2(sref<GeneralEvaluator<XMES, XMEv>> _e,
-                           sref<NS<XMES, XMEv>> _ns, sref<RandGen> _rg)
+  MOILSLPerturbationLPlus2(sref<GeneralEvaluator<XMES>> _e, sref<NS<XMES>> _ns,
+                           sref<RandGen> _rg)
       : evaluator(_e), rg(_rg) {
     ns.push_back(_ns);
   }
 
   virtual ~MOILSLPerturbationLPlus2() {}
 
-  void add_ns(sref<NS<XMES, XMEv>> _ns) { ns.push_back(_ns); }
+  void add_ns(sref<NS<XMES>> _ns) { ns.push_back(_ns); }
 
   // void perturb(S& s, XMEv& mev, const StopCriteria<XEv>& stopCriteria, int
   // level)
@@ -91,7 +72,7 @@ class MOILSLPerturbationLPlus2 : public MOILSLPerturbation<XMES, XMEv> {
     while (a < level) {
       int x = rg->rand(ns.size());
 
-      uptr<Move<XMES, XMEv>> m = ns[x]->validRandomMove(smev);
+      uptr<Move<XMES>> m = ns[x]->validRandomMove(smev);
 
       if (m) {
         a++;
@@ -128,13 +109,13 @@ template <XSolution S, XEvaluation XEv = Evaluation<>,
           XEvaluation XMEv = MultiEvaluation<>, XESolution XMES = pair<S, XMEv>>
 class MOILSLPerturbationLPlus2Prob : public MOILSLPerturbation<XMES, XMEv> {
  private:
-  vector<NS<XMES, XMEv>*> ns;
+  vector<NS<XMES>*> ns;
   vector<pair<int, double>> pNS;
   IEvaluator<XMES>& evaluator;
   RandGen& rg;
 
  public:
-  MOILSLPerturbationLPlus2Prob(IEvaluator<XMES>& _e, NS<XMES, XMEv>& _ns,
+  MOILSLPerturbationLPlus2Prob(IEvaluator<XMES>& _e, NS<XMES>& _ns,
                                RandGen& _rg)
       : evaluator(_e), rg(_rg) {
     ns.push_back(&_ns);
@@ -143,7 +124,7 @@ class MOILSLPerturbationLPlus2Prob : public MOILSLPerturbation<XMES, XMEv> {
 
   virtual ~MOILSLPerturbationLPlus2Prob() {}
 
-  void add_ns(NS<XMES, XMEv>& _ns) {
+  void add_ns(NS<XMES>& _ns) {
     ns.push_back(&_ns);
     pNS.push_back(make_pair(1, 1));
 

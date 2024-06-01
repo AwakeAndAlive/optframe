@@ -1,28 +1,14 @@
-// OptFrame - Optimization Framework
+// SPDX-License-Identifier: LGPL-3.0-or-later OR MIT
+// Copyright (C) 2007-2022 - OptFrame - https://github.com/optframe/optframe
 
-// Copyright (C) 2009, 2010, 2011
-// http://optframe.sourceforge.net/
-//
-// This file is part of the OptFrame optimization framework. This framework
-// is free software; you can redistribute it and/or modify it under the
-// terms of the GNU Lesser General Public License v3 as published by the
-// Free Software Foundation.
+#ifndef OPTFRAME_HEURISTICS_MOLOCALSEARCHES_GPLS_HPP_
+#define OPTFRAME_HEURISTICS_MOLOCALSEARCHES_GPLS_HPP_
 
-// This framework is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License v3 for more details.
-
-// You should have received a copy of the GNU Lesser General Public License v3
-// along with this library; see the file COPYING.  If not, write to the Free
-// Software Foundation, 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301,
-// USA.
-
-#ifndef OPTFRAME_GENERALPARETOLOCALSEARCH_HPP_
-#define OPTFRAME_GENERALPARETOLOCALSEARCH_HPP_
-
+// C++
 #include <algorithm>
-
+#include <vector>
+//
+#include "../../Concepts/BaseConcepts.hpp"
 #include "../../Evaluator.hpp"
 #include "../../Heuristics/MOLocalSearches/MOBestImprovement.hpp"
 #include "../../InitialPareto.hpp"
@@ -31,6 +17,8 @@
 #include "../../Pareto.hpp"
 #include "../../ParetoDominance.hpp"
 #include "../../ParetoDominanceWeak.hpp"
+
+namespace optframe {
 
 template <XSolution S, XEvaluation XMEv = MultiEvaluation<>,
           XESolution XMES = pair<S, XMEv>>
@@ -41,23 +29,25 @@ struct gplsStructure {
   gplsStructure() {}
 };
 
-template <XSolution S, XEvaluation XMEv = MultiEvaluation<>,
-          XESolution XMES = pair<S, XMEv>>
-class paretoManagerGPLS : public paretoManager<S, XMEv, XMES> {
-  using XEv = Evaluation<>;  // hardcoded... TODO: fix
+template <XESolution XES, XESolution XMES>
+class ParetoManagerGPLS : public ParetoManager<XES, XMES> {
+  using S = typename XES::first_type;
+  using XEv = typename XES::second_type;
+  using XMEv = typename XMES::second_type;
+
  private:
   int r;
 
  public:
   gplsStructure<S, XMEv> gplsData;
-  //	Pareto<XMES> x_e; //TODO -- possibility of embedding Pareto here
+  // Pareto<XMES> x_e; //TODO -- possibility of embedding Pareto here
 
-  paretoManagerGPLS(IEvaluator<XMES>& _mev, int _r)
-      :  // paretoManagerGPLS(GeneralEvaluator<XMES, XMEv>& _mev, int _r) :
-        paretoManager<S, XMEv, XMES>(_mev),
+  ParetoManagerGPLS(sref<MultiEvaluator<XES, XMES>> _mev, int _r)
+      :  // paretoManagerGPLS(GeneralEvaluator<XMES>& _mev, int _r) :
+        ParetoManager<XES, XMES>(_mev),
         r(_r) {}
 
-  virtual ~paretoManagerGPLS() {}
+  virtual ~ParetoManagerGPLS() {}
 
   // Special addSolution used in the GPLS speedUp
   // virtual bool addSolutionWithMEV(Pareto<XMES>& p, const S& candidate,
@@ -69,14 +59,14 @@ class paretoManagerGPLS : public paretoManager<S, XMEv, XMES> {
 
       // if (paretoManager<S, XMEv, XMES>::domWeak.dominates(popIndFitness,
       // candidateMev))
-      if (paretoManager<S, XMEv, XMES>::domWeak.dominates(popIndFitness,
-                                                          cand_smev.second))
+      if (ParetoManager<XES, XMES>::domWeak.dominates(popIndFitness,
+                                                      cand_smev.second))
         return false;
 
       // if (paretoManager<S, XMEv, XMES>::dom.dominates(candidateMev,
       // popIndFitness))
-      if (paretoManager<S, XMEv, XMES>::dom.dominates(cand_smev.second,
-                                                      popIndFitness)) {
+      if (ParetoManager<XES, XMES>::dom.dominates(cand_smev.second,
+                                                  popIndFitness)) {
         p.erase(ind);
         gplsData.nsParetoOptimum.erase(gplsData.nsParetoOptimum.begin() + ind);
         gplsData.newSol.erase(gplsData.newSol.begin() + ind);
@@ -109,31 +99,28 @@ class paretoManagerGPLS : public paretoManager<S, XMEv, XMES> {
 // GPLS is a kind of Multi-Objective version of the VND
 // However, it is designed in an efficient manner for iteratively exploring the
 // obtained non-dominated solution
-template <XESolution XMES, XEvaluation XMEv = MultiEvaluation<>>
-class GeneralParetoLocalSearch : public MOLocalSearch<XMES, XMEv> {
-  using S = typename XMES::first_type;
+template <XESolution XES, XEMSolution XMES>
+class GeneralParetoLocalSearch : public MOLocalSearch<XES, XMES> {
+  using S = typename XES::first_type;
+  using XEv = typename XES::second_type;
+  using XMEv = typename XMES::second_type;
   static_assert(is_same<S, typename XMES::first_type>::value);
-  static_assert(is_same<XMEv, typename XMES::second_type>::value);
-  using XEv =
-      Evaluation<>;  // hardcoded Evaluation... only by fixing ParetoManager
+
  private:
   sref<InitialPareto<XMES>> init_pareto;
   int init_pop_size;
-  vsref<MOLocalSearch<XMES, XMEv>> vLS;
-  paretoManagerGPLS<S, XMEv> pMan2PPLS;
+  vsref<MOLocalSearch<XES, XMES>> vLS;
+  ParetoManagerGPLS<XES, XMES> pMan2PPLS;
 
  public:
-  GeneralParetoLocalSearch(sref<IEvaluator<XMES>> _mev,
+  GeneralParetoLocalSearch(sref<MultiEvaluator<XES, XMES>> _mev,
                            sref<InitialPareto<XMES>> _init_pareto,
                            int _init_pop_size,
-                           vsref<MOLocalSearch<XMES, XMEv>> _vLS)
-      :  // GeneralParetoLocalSearch(GeneralEvaluator<XMES, XMEv>& _mev,
-         // InitialPareto<XMES>& _init_pareto, int _init_pop_size,
-         // vector<MOLocalSearch<S, XMEv>*> _vLS) :
-        init_pareto(_init_pareto),
+                           vsref<MOLocalSearch<XES, XMES>> _vLS)
+      : init_pareto(_init_pareto),
         init_pop_size(_init_pop_size),
         vLS(_vLS),
-        pMan2PPLS(paretoManagerGPLS<S, XMEv, XMES>(_mev, _vLS.size())) {}
+        pMan2PPLS(ParetoManagerGPLS<XES, XMES>(_mev, _vLS.size())) {}
 
   virtual ~GeneralParetoLocalSearch() {}
 
@@ -147,9 +134,9 @@ class GeneralParetoLocalSearch : public MOLocalSearch<XMES, XMEv> {
         }
 */
 
-  virtual void moSearchFrom(Pareto<XMES>& p, XMES& se,
-                            paretoManager<S, XMEv, XMES>& pManager,
-                            const StopCriteria<XMEv>& stopCriteria) override {
+  void moSearchFrom(Pareto<XMES>& p, XMES& se,
+                    ParetoManager<XES, XMES>& pManager,
+                    const StopCriteria<XMEv>& stopCriteria) override {
     // S& s = se.first;
     // XMEv& sMev = se.second;
     // Pareto<XMES> _pf;
@@ -315,4 +302,6 @@ class GeneralParetoLocalSearch : public MOLocalSearch<XMES, XMEv> {
   }
 };
 
-#endif /*OPTFRAME_GENERALPARETOLOCALSEARCH_HPP_*/
+}  // namespace optframe
+
+#endif  // OPTFRAME_HEURISTICS_MOLOCALSEARCHES_GPLS_HPP_
