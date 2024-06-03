@@ -13,7 +13,7 @@ def generate_sql(csv_file, sql_file):
                 improvement = row[3]
                 execution_time = row[4]
                 best_solution = row[5]
-                sql = f"INSERT INTO tsp_brkga_data (instance, initial_evaluation, best_evaluation, improvement, execution_time, best_solution, source) VALUES ('{instance}', {initial_evaluation}, {best_evaluation}, {improvement}, {execution_time}, '{best_solution}', 'Python');\n"
+                sql = f"INSERT INTO tsp_brkga_data (instance, initial_evaluation, best_evaluation, improvement, execution_time, best_solution, source) VALUES ('{instance}', {initial_evaluation}, {best_evaluation}, {improvement}, {execution_time}, '{best_solution}', 'C');\n"
                 sqlfile.write(sql)
 
 if __name__ == "__main__":

@@ -12,6 +12,7 @@
 #include <OptFrame/Heuristics/Heuristics.hpp>  // many metaheuristics here...
 #include <OptFrame/Heuristics/SA/BasicSimulatedAnnealing.hpp> // Simulated Annealing
 #include <OptFrame/LocalSearch.hpp>
+#include <iomanip> // for std::setprecision
 
 // import everything on main()
 using namespace std;        // NOLINT
@@ -22,12 +23,15 @@ int main(int argc, char* argv[]) {
   std::random_device rd;
   std::mt19937 gen(rd());
 
-  if (argc != 2) {
-    std::cerr << "Usage: " << argv[0] << " <instance file>" << std::endl;
+  if (argc != 5) {
+    std::cerr << "Usage: " << argv[0] << " <instance file> <initial temperature> <temperature reduction factor> <max iterations>" << std::endl;
     return 1;
   }
 
   const char* instanceFile = argv[1];
+  double initialTemperature = std::stod(argv[2]);
+  double temperatureReductionFactor = std::stod(argv[3]);
+  int maxIterations = std::stoi(argv[4]);
 
   // Load data into problem context 'pTSP'
   ifstream infile(instanceFile);
@@ -50,10 +54,11 @@ int main(int argc, char* argv[]) {
 
   std::cout << "======== Testa Construtivo Aleatório ========" << std::endl;
   std::vector<int> initialSolution = *demo.randomConstructive->generateSolution(0);
+  auto initialEvaluation = demo.eval->evaluate(initialSolution);
   std::cout << initialSolution << std::endl;
 
   std::cout << "======== Testa Avaliador ========" << std::endl;
-  ESolutionTSP esol(initialSolution, demo.eval->evaluate(initialSolution));
+  ESolutionTSP esol(initialSolution, initialEvaluation);
   esol.second.print();
 
   std::cout << "======== Executa Simulated Annealing ========" << std::endl;
@@ -65,17 +70,36 @@ int main(int argc, char* argv[]) {
   neighbors.push_back(ns);
   sref<GeneralEvaluator<ESolutionTSP>> evaluator(new FEvaluator<ESolutionTSP, MinOrMax::MINIMIZE, ProblemContext>(pTSP, fevaluate));
 
-  BasicSimulatedAnnealing<ESolutionTSP> sa(evaluator, initRand, neighbors, 0.98, 1000, 100000.0, sref<RandGen>(new RandGen()));
+  BasicSimulatedAnnealing<ESolutionTSP> sa(evaluator, initRand, neighbors, temperatureReductionFactor, maxIterations, initialTemperature, sref<RandGen>(new RandGen()));
 
   optframe::Timer t;
   auto searchOut = sa.search(StopCriteria<ESolutionTSP::second_type>{3000.0});  // 10.0 seconds max
-  std::cout << "spent time: " << t.now() << "s" << std::endl;
+  double timeSpent = t.now();
+  std::cout << "spent time: " << timeSpent << "s" << std::endl;
 
   ESolutionTSP melhor = *searchOut.best;
+  double finalEvaluation = melhor.second.evaluation();
   std::cout << "======== Imprime melhor solução do SA ========" << std::endl;
   cout << melhor.first << endl;
   melhor.second.print();
 
-  std::cout << "======== Fim da Execução ========" << std::endl;
+  // Calcula o percentual de diferença
+  double percentDiference = ((initialEvaluation.evaluation() - finalEvaluation) / initialEvaluation.evaluation()) * 100.0;
+
+  // Formata a saída como CSV
+  std::cout << instanceFile << ";"
+            << std::fixed << std::setprecision(2) << initialEvaluation.evaluation() << ";"
+            << std::fixed << std::setprecision(2) << finalEvaluation << ";"
+            << std::fixed << std::setprecision(2) << percentDiference << ";"
+            << std::fixed << std::setprecision(2) << timeSpent << ";"
+            << "[";
+  for (size_t i = 0; i < melhor.first.size(); ++i) {
+    std::cout << melhor.first[i];
+    if (i < melhor.first.size() - 1) {
+      std::cout << ", ";
+    }
+  }
+  std::cout << "]" << std::endl;
+
   return 0;
 }
