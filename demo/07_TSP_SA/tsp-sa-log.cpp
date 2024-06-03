@@ -83,10 +83,10 @@ int main(int argc, char* argv[]) {
   cout << melhor.first << endl;
   melhor.second.print();
 
-  // Calcula o percentual de diferença
+  // Percentual de diferença
   double percentDiference = ((initialEvaluation.evaluation() - finalEvaluation) / initialEvaluation.evaluation()) * 100.0;
 
-  // Formata a saída como CSV
+  // Formato CSV
   std::cout << instanceFile << ";"
             << std::fixed << std::setprecision(2) << initialEvaluation.evaluation() << ";"
             << std::fixed << std::setprecision(2) << finalEvaluation << ";"
